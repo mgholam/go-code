@@ -3,9 +3,12 @@ package zipfile
 import (
 	"archive/zip"
 	"io"
-	"io/fs"
 	"os"
 	"time"
+)
+
+var (
+// UniqueFiles = false
 )
 
 // Add an existing file to a zip file
@@ -15,25 +18,41 @@ func AddFile(zipfilename string, filename string) error {
 	if err != nil {
 		return err
 	}
+	hdr := &zip.FileHeader{
+		Name:     filename,
+		Modified: fni.ModTime(),
+		Method:   zip.Deflate,
+		Comment:  fni.ModTime().String(),
+	}
+	f, err := os.Open(filename)
+	if err != nil {
+		return err
+	}
+	defer f.Close()
 
 	if _, err := os.Stat(zipfilename); err != nil {
-		return zipCreateAddFile(zipfilename, filename, fni)
+		return zipCreateAdd(zipfilename, filename, hdr, f)
 	}
-
-	return zipAppendFile(zipfilename, filename, fni)
+	return zipAppend(zipfilename, filename, hdr, f)
 }
 
 // Add a stream to a zip file
 func Add(zipfilename string, filename string, r io.Reader) error {
 
-	if _, err := os.Stat(zipfilename); err != nil {
-		return zipCreateAdd(zipfilename, filename, r)
+	hdr := &zip.FileHeader{
+		Name:     filename,
+		Modified: time.Now(),
+		Method:   zip.Deflate,
+		Comment:  time.Now().String(),
 	}
 
-	return zipAppend(zipfilename, filename, r)
+	if _, err := os.Stat(zipfilename); err != nil {
+		return zipCreateAdd(zipfilename, filename, hdr, r)
+	}
+	return zipAppend(zipfilename, filename, hdr, r)
 }
 
-func zipAppend(zipfilename, filename string, r io.Reader) error {
+func zipAppend(zipfilename, filename string, hdr *zip.FileHeader, r io.Reader) error {
 	zipReader, err := zip.OpenReader(zipfilename)
 	if err != nil {
 		return err
@@ -51,12 +70,7 @@ func zipAppend(zipfilename, filename string, r io.Reader) error {
 		io.Copy(targetItem, zipItemReader)
 	}
 
-	z, _ := targetZipWriter.CreateHeader(&zip.FileHeader{
-		Name:     filename,
-		Modified: time.Now(),
-		Method:   zip.Deflate,
-		Comment:  time.Now().String(),
-	})
+	z, _ := targetZipWriter.CreateHeader(hdr)
 
 	io.Copy(z, r)
 	zipReader.Close()
@@ -69,7 +83,7 @@ func zipAppend(zipfilename, filename string, r io.Reader) error {
 	return nil
 }
 
-func zipCreateAdd(zipfilename, filename string, r io.Reader) error {
+func zipCreateAdd(zipfilename, filename string, hdr *zip.FileHeader, r io.Reader) error {
 	archive, err := os.Create(zipfilename)
 	if err != nil {
 		return err
@@ -78,84 +92,12 @@ func zipCreateAdd(zipfilename, filename string, r io.Reader) error {
 
 	zipWriter := zip.NewWriter(archive)
 	defer zipWriter.Close()
-	z, err := zipWriter.CreateHeader(&zip.FileHeader{
-		Name:     filename,
-		Modified: time.Now(),
-		Comment:  time.Now().String(),
-		Method:   zip.Deflate,
-	})
+	z, err := zipWriter.CreateHeader(hdr)
 	if err != nil {
 		return err
 	}
 	if _, err := io.Copy(z, r); err != nil {
 		return err
 	}
-	return nil
-}
-
-func zipCreateAddFile(zfn string, fn string, fni fs.FileInfo) error {
-	archive, err := os.Create(zfn)
-	if err != nil {
-		return err
-	}
-	defer archive.Close()
-
-	f, err := os.Open(fn)
-	if err != nil {
-		return err
-	}
-	defer f.Close()
-
-	zipWriter := zip.NewWriter(archive)
-	defer zipWriter.Close()
-	z, err := zipWriter.CreateHeader(&zip.FileHeader{
-		Name:     fn,
-		Modified: fni.ModTime(),
-		Comment:  fni.ModTime().String(),
-		Method:   zip.Deflate,
-	})
-	if err != nil {
-		return err
-	}
-	if _, err := io.Copy(z, f); err != nil {
-		return err
-	}
-	return nil
-}
-
-func zipAppendFile(zfn string, fn string, fni fs.FileInfo) error {
-	zipReader, err := zip.OpenReader(zfn)
-	if err != nil {
-		return err
-	}
-	targetFile, err := os.Create(zfn + ".tmp")
-	if err != nil {
-		return err
-	}
-	targetZipWriter := zip.NewWriter(targetFile)
-
-	for _, zipItem := range zipReader.File {
-		zipItemReader, _ := zipItem.Open()
-		header := zipItem.FileHeader
-		targetItem, _ := targetZipWriter.CreateHeader(&header)
-		io.Copy(targetItem, zipItemReader)
-	}
-
-	z, _ := targetZipWriter.CreateHeader(&zip.FileHeader{
-		Name:     fn,
-		Modified: fni.ModTime(),
-		Comment:  fni.ModTime().String(),
-		Method:   zip.Deflate,
-	})
-	f, _ := os.Open(fn)
-	io.Copy(z, f)
-	f.Close()
-	zipReader.Close()
-	targetZipWriter.Close()
-	targetFile.Close()
-
-	// rename output zipfile
-	os.Remove(zfn)
-	os.Rename(zfn+".tmp", zfn)
 	return nil
 }

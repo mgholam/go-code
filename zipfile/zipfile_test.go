@@ -1,7 +1,6 @@
 package zipfile_test
 
 import (
-	"os"
 	"strings"
 	"testing"
 
@@ -10,7 +9,8 @@ import (
 
 func Test(t *testing.T) {
 
-	zipfile.AddFile("ziptest.zip", os.Stat("zipfile.go"))
+	// zipfile.UniqueFiles = true
+	zipfile.AddFile("ziptest.zip", "zipfile.go")
 	// zipfile.AddFile("ziptest.zip", "../genthumb/readme.md")
 	zipfile.AddFile("ziptest.zip", "zipfile.go")
 
