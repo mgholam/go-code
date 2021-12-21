@@ -6,23 +6,25 @@ import (
 	"sync/atomic"
 )
 
+var l *lockManager
+
 type lmData struct {
 	wg    sync.WaitGroup
 	count int32
 }
-type LockManager struct {
+type lockManager struct {
 	locks map[string]*lmData
 	mu    sync.Mutex
 }
 
-func New() *LockManager {
-	lm := LockManager{
-		locks: make(map[string]*lmData),
-	}
-	return &lm
-}
+// func New() *LockManager {
+// 	lm := LockManager{
+// 		locks: make(map[string]*lmData),
+// 	}
+// 	return &lm
+// }
 
-func (l *LockManager) getLock(key string) *lmData {
+func getLock(key string) *lmData {
 	l.mu.Lock()
 	defer l.mu.Unlock()
 
@@ -34,7 +36,7 @@ func (l *LockManager) getLock(key string) *lmData {
 	return ld
 }
 
-func (l *LockManager) cleanup(key string) {
+func cleanup(key string) {
 	l.mu.Lock()
 	defer l.mu.Unlock()
 
@@ -45,8 +47,13 @@ func (l *LockManager) cleanup(key string) {
 }
 
 // Do : lock on filename and run dofunc()
-func (l *LockManager) Do(filename string, dofunc func()) {
-	ld := l.getLock(filename)
+func Do(filename string, dofunc func()) {
+	if l == nil {
+		l = &lockManager{
+			locks: make(map[string]*lmData),
+		}
+	}
+	ld := getLock(filename)
 
 	atomic.AddInt32(&ld.count, 1)
 	log.Println("wait", filename)
@@ -56,5 +63,5 @@ func (l *LockManager) Do(filename string, dofunc func()) {
 	dofunc()
 	ld.wg.Done()
 	atomic.AddInt32(&ld.count, -1)
-	l.cleanup(filename)
+	cleanup(filename)
 }

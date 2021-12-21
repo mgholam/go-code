@@ -2,6 +2,7 @@ package lockmanager_test
 
 import (
 	"fmt"
+	"sync"
 	"sync/atomic"
 	"testing"
 	"time"
@@ -12,41 +13,44 @@ import (
 func Test(t *testing.T) {
 
 	var i int32
-	var lm = lockmanager.New()
+	var wg = sync.WaitGroup{}
+	wg.Add(4)
 
-
-	go lm.Do("file2", func() {
+	go lockmanager.Do("file2", func() {
 		// fmt.Println(lm.Locks)
 		time.Sleep(2 * time.Second)
 		atomic.AddInt32(&i, 1)
-		fmt.Println("1 done")
+		t.Log("1 done")
+		wg.Done()
 	})
-	go lm.Do("file1", func() {
+	go lockmanager.Do("file1", func() {
 		// fmt.Println(lm.Locks)
 
 		time.Sleep(2 * time.Second)
 
 		atomic.AddInt32(&i, 1)
-		fmt.Println("2 done")
+		t.Log("2 done")
+		wg.Done()
 	})
-	go lm.Do("file2", func() {
+	go lockmanager.Do("file2", func() {
 		// fmt.Println(lm.Locks)
 		// fmt.Println("3 locking file")
 		time.Sleep(2 * time.Second)
 		atomic.AddInt32(&i, 1)
 
-		fmt.Println("3 done")
+		t.Log("3 done")
+		wg.Done()
 	})
-	go lm.Do("file1", func() {
+	go lockmanager.Do("file1", func() {
 		// fmt.Println(lm.Locks)
 		fmt.Println("4 locking file")
 		time.Sleep(2 * time.Second)
 		atomic.AddInt32(&i, 1)
-		fmt.Println("4 done")
+		t.Log("4 done")
+		wg.Done()
 	})
 
-	fmt.Println("Press enter...")
-	fmt.Scanln()
-	fmt.Println(i)
+	wg.Wait()
+	t.Log(i)
 	// fmt.Println(lm.locks)
 }
