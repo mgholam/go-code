@@ -5,14 +5,13 @@
 - blocking usage of a file
 
 ```go
-var lm = lockmanager.New()
 
-go lm.Do("file1", func() {
+go lockmanager.Do("file1", func() {
 		time.Sleep(2 * time.Second)
 		fmt.Println("1 done")
 })
 
-go lm.Do("file1", func() {
+go lockmanager.Do("file1", func() {
 		time.Sleep(2 * time.Second)
 		fmt.Println("2 done")
 })
