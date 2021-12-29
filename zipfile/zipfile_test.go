@@ -1,6 +1,7 @@
 package zipfile_test
 
 import (
+	"os"
 	"strings"
 	"testing"
 
@@ -8,6 +9,8 @@ import (
 )
 
 func Test(t *testing.T) {
+	os.Remove("ziptest.zip")
+	os.Remove("zz.zip")
 
 	// zipfile.UniqueFiles = true
 	zipfile.AddFile("ziptest.zip", "zipfile.go")

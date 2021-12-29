@@ -17,13 +17,6 @@ type lockManager struct {
 	mu    sync.Mutex
 }
 
-// func New() *LockManager {
-// 	lm := LockManager{
-// 		locks: make(map[string]*lmData),
-// 	}
-// 	return &lm
-// }
-
 func getLock(key string) *lmData {
 	l.mu.Lock()
 	defer l.mu.Unlock()
