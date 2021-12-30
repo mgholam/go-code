@@ -61,12 +61,6 @@ type StorageFile struct {
 func AddTerminator(filename string) {
 	// TODO : write AddTerminator()
 
-	// f, e := os.OpenFile(filename, os.O_WRONLY, 0644)
-	// if e != nil {
-	// 	return
-	// }
-	// defer f.Close()
-
 }
 
 // Open/create a stroage file (single writer/ multiple reader)
@@ -333,8 +327,9 @@ func (sf *StorageFile) Close() {
 
 	sf.flush()
 
-	for i := 0; i < MAXREADERS; i++ {
-		r := <-sf.readers
+	close(sf.readers)
+
+	for r := range sf.readers {
 		r.close()
 	}
 

@@ -1,14 +1,16 @@
 package storagefile_test
 
 import (
-	"bb/storagefile"
+	"encoding/json"
 	"fmt"
 	"os"
+
 	"syscall"
 	"testing"
 	"time"
 
-	jsoniter "github.com/json-iterator/go"
+	// jsoniter "github.com/json-iterator/go"
+	"github.com/mgholam/go-code/storagefile"
 )
 
 type Book struct {
@@ -173,7 +175,6 @@ func doread(sf *storagefile.StorageFile, count int) {
 			continue
 		}
 		if h.Type != "/api/book" {
-			// if h.Id%100_000 != int64(i) {
 			fmt.Println("data not matching", i)
 		}
 	}
@@ -184,9 +185,7 @@ func dosave(sf *storagefile.StorageFile, count int) {
 
 	t := time.Now()
 
-	var json = jsoniter.ConfigCompatibleWithStandardLibrary
-	// json.NewDecoder()
-	// jsoniter.ConfigFastest
+	// var json = jsoniter.ConfigCompatibleWithStandardLibrary
 
 	for i := 1; i <= count; i++ {
 		book := Book{
@@ -195,10 +194,8 @@ func dosave(sf *storagefile.StorageFile, count int) {
 			Title:  "lord of the rings",
 			Rating: 5,
 			Date:   now(),
-		} // new(Book)
+		}
 		b, _ := json.Marshal(book)
-		// b, _ := json.Marshal(book)
-		// b, _ := easyjson.Marshal(book)
 
 		sf.Save("/api/book", b)
 	}
