@@ -11,19 +11,25 @@ Fast structured storage and retrieval file, this allows you to save the json/fil
 # example
 
 ```go
+storagefile.MAXREADERS=10 // set 10 readers (default = 5)
+sf, _ := storagefile.Open("docs.dat")
+defer  sf.Close()
 
-	storagefile.MAXREADERS=10 // set 10 readers (default = 5)
-	sf, _ := storagefile.Open("docs.dat")
-	defer  sf.Close()
+// doc save middleware
+app.Use(func(c *fiber.Ctx) error {
+	if c.Method() == "POST" || c.Method() == "PUT" || c.Method() == "DELETE" {
+		// save to docs database
+		sf.Save(c.Method()+"|"+c.Path(), c.Body())
+	}
+	log.Println(c)
+	return c.Next()
+})
 
-	// doc save middleware
-	app.Use(func(c *fiber.Ctx) error {
-		if c.Method() == "POST" || c.Method() == "PUT" || c.Method() == "DELETE" {
-			// save to docs database
-			sf.Save(c.Method()+"|"+c.Path(), c.Body())
-		}
-		log.Println(c)
-		return c.Next()
-	})
+// get the 10t record in the StroageFile
+ty, by, err := sf.Get(int64(10))
+if err != nil {
+    
+}
+
 ```
 
