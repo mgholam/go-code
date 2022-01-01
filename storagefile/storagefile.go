@@ -165,18 +165,19 @@ func fileExists(fn string) bool {
 }
 
 // Save data to storage file
-func (sf *StorageFile) Save(dtype string, data []byte) error {
+func (sf *StorageFile) Save(dtype string, data []byte) int64 {
 	sf.l.Lock()
 
-	sf.internalSave(dtype, data, false)
+	i := sf.internalSave(dtype, data, false)
 
 	sf.l.Unlock()
-	return nil
+	return i
 }
 
-func (sf *StorageFile) internalSave(dtype string, data []byte, skip bool) error {
+func (sf *StorageFile) internalSave(dtype string, data []byte, skip bool) int64 {
 
 	sf.dirty = true
+	i := sf.count
 	atomic.AddInt64(&sf.count, 1)
 	len := sf.saveHeader(dtype, data, skip)
 	sf.writer.Write(data)
@@ -190,7 +191,7 @@ func (sf *StorageFile) internalSave(dtype string, data []byte, skip bool) error 
 		sf.flush()
 	}
 
-	return nil
+	return i
 }
 
 func now() time.Time {
