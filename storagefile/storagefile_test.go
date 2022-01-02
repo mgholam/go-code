@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"os"
+	"sync"
 
 	"syscall"
 	"testing"
@@ -19,6 +20,44 @@ type Book struct {
 	Author string    `json:"author"`
 	Rating int       `json:"rating"`
 	Date   time.Time `json:"date" gorm:"column:date"`
+}
+
+func Test_concurrent_write(t *testing.T) {
+	sf, e := storagefile.Open("ccwrite.dat")
+	if e != nil {
+		panic(e)
+	}
+	defer sf.Close()
+	defer func() {
+		os.Remove("ccwrite.dat")
+		os.Remove("ccwrite.dat.idx")
+	}()
+
+	count := 10_000
+	wg := sync.WaitGroup{}
+	wg.Add(2)
+
+	go func(w *sync.WaitGroup) {
+		for i := 1; i <= count; i++ {
+			sf.Save("22", []byte("111111"))
+		}
+		w.Done()
+	}(&wg)
+	go func(w *sync.WaitGroup) {
+		for i := 1; i <= count; i++ {
+			sf.Save("11", []byte("222222"))
+
+		}
+		w.Done()
+	}(&wg)
+	wg.Wait()
+
+	i := sf.Count()
+	t.Log(i)
+	if i < int64(2*count) {
+		t.Error("count does not match")
+	}
+
 }
 
 func Test_run_100k_read_write(t *testing.T) {
