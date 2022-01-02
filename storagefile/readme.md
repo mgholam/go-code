@@ -28,8 +28,10 @@ app.Use(func(c *fiber.Ctx) error {
 // get the 10t record in the StroageFile
 ty, by, err := sf.Get(int64(10))
 if err != nil {
-    
+    log.Error(err)
 }
+fmt.Println("type=", ty)
+fmt.Println("bytes=", by)
 
 ```
 
