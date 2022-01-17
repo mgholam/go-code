@@ -25,7 +25,7 @@ app.Use(func(c *fiber.Ctx) error {
 	return c.Next()
 })
 
-// get the 10t record in the StroageFile
+// get the 10th record in the StroageFile
 ty, by, err := sf.Get(int64(10))
 if err != nil {
     log.Error(err)
@@ -35,3 +35,6 @@ fmt.Println("bytes=", by)
 
 ```
 
+# Performance
+
+- running on AMD Ryzen 5500U "performance mode" ~ 600,000 json string saves/sec

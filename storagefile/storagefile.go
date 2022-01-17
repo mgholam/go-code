@@ -61,6 +61,12 @@ type StorageFile struct {
 func AddTerminator(filename string) {
 	// TODO : write AddTerminator()
 
+	// f, e := os.OpenFile(filename, os.O_WRONLY, 0644)
+	// if e != nil {
+	// 	return
+	// }
+	// defer f.Close()
+
 }
 
 // Open/create a stroage file (single writer/ multiple reader)
@@ -149,7 +155,10 @@ func makeReader(filename string) *reader {
 func (sf *StorageFile) checkLast() bool {
 	f, _ := os.OpenFile(sf.filename, os.O_RDONLY|os.O_CREATE|os.O_APPEND, 0644)
 	defer f.Close()
-	f.Seek(-4, os.SEEK_END)
+	_, e := f.Seek(-4, os.SEEK_END)
+	if e != nil {
+		return true
+	}
 	b := make([]byte, 4)
 	f.Read(b)
 	if b[0] != '|' || b[1] != '|' || b[2] != '|' || b[3] != '|' {

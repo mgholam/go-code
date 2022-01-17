@@ -22,6 +22,36 @@ type Book struct {
 	Date   time.Time `json:"date" gorm:"column:date"`
 }
 
+func Test_speedstringonly(t *testing.T) {
+	sf, e := storagefile.Open("speed.dat")
+	if e != nil {
+		panic(e)
+	}
+	defer sf.Close()
+	defer func() {
+		os.Remove("speed.dat")
+		os.Remove("speed.dat.idx")
+	}()
+
+	b := Book{
+		ID:     1,
+		Title:  "dune",
+		Author: "frank herbert",
+		Rating: 5,
+		Date:   time.Now(),
+	}
+	by, _ := json.Marshal(&b)
+
+	dt := time.Now()
+
+	fmt.Println("saving 600_000 ...")
+
+	for i := 1; i < 600_000; i++ {
+		sf.Save("test", by)
+	}
+	fmt.Println("time : ", time.Since(dt))
+}
+
 func Test_concurrent_write(t *testing.T) {
 	sf, e := storagefile.Open("ccwrite.dat")
 	if e != nil {
