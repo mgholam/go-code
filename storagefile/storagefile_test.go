@@ -44,10 +44,24 @@ func Test_speedstringonly(t *testing.T) {
 
 	dt := time.Now()
 
-	fmt.Println("saving 600_000 ...")
+	count := 640_000
 
-	for i := 1; i < 600_000; i++ {
+	fmt.Printf("saving %d ...\n", count)
+
+	for i := 1; i < count; i++ {
 		sf.Save("test", by)
+	}
+	fmt.Println("time : ", time.Since(dt))
+
+	dt = time.Now()
+
+	fmt.Printf("reading %d ...\n", count)
+
+	for i := 1; i < count; i++ {
+		_, _, e := sf.Get(int64(i))
+		if e != nil {
+			fmt.Println("error reading ", i)
+		}
 	}
 	fmt.Println("time : ", time.Since(dt))
 }

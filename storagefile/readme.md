@@ -37,4 +37,4 @@ fmt.Println("bytes=", by)
 
 # Performance
 
-- running on AMD Ryzen 5500U "performance mode" ~ 600,000 json string saves/sec
+- running on AMD Ryzen 5500U "performance mode" ~ 640,000 json string saves/sec

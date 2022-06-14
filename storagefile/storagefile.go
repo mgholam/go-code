@@ -291,24 +291,18 @@ func (r *reader) getheader(id int64) (*Header, error) {
 	d.DataLength = int32(binary.LittleEndian.Uint32(buf[24:]))
 	d.Id = int64(binary.LittleEndian.Uint64(buf[28:]))
 
-	buf = make([]byte, dtlen)
+	buf = make([]byte, dtlen+int16(d.DataLength))
 	n, e = io.ReadFull(r.file, buf)
 	if e != nil {
 		return nil, e
 	}
-	if n != int(dtlen) {
-		return nil, errors.New("unable to read type string")
-	}
-	d.Type = string(buf)
-	buf = make([]byte, d.DataLength)
-	n, e = io.ReadFull(r.file, buf)
-	if e != nil {
-		return nil, e
-	}
-	if n != int(d.DataLength) {
+	if n != int(dtlen+int16(d.DataLength)) {
 		return nil, errors.New("unable to read data")
 	}
-	d.Data = buf
+
+	d.Type = string(buf[:dtlen])
+
+	d.Data = buf[dtlen:]
 
 	return &d, nil
 }
