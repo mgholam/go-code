@@ -267,14 +267,14 @@ func (r *reader) getheader(id int64) (*Header, error) {
 	binary.Read(r.idx, binary.LittleEndian, &ptr)
 
 	r.file.Seek(ptr, io.SeekStart)
-
+	hdrlen := 36
 	// read the rest
-	buf := make([]byte, 36)
+	buf := make([]byte, 4096)
 	n, e := io.ReadFull(r.file, buf)
-	if e != nil {
+	if e != nil && n == 0 {
 		return nil, e
 	}
-	if n < 36 {
+	if n < hdrlen {
 		return nil, errors.New("header byte count error")
 	}
 	if buf[0] != '{' || buf[1] != '{' || buf[2] != '{' || buf[3] != '{' || buf[4] != 0 || buf[5] != 0 {
@@ -291,18 +291,25 @@ func (r *reader) getheader(id int64) (*Header, error) {
 	d.DataLength = int32(binary.LittleEndian.Uint32(buf[24:]))
 	d.Id = int64(binary.LittleEndian.Uint64(buf[28:]))
 
-	buf = make([]byte, dtlen+int16(d.DataLength))
-	n, e = io.ReadFull(r.file, buf)
-	if e != nil {
-		return nil, e
+	if hdrlen+int(dtlen)+int(d.DataLength) > 4096 {
+		// reread data
+		r.file.Seek(ptr, io.SeekStart)
+		buf = make([]byte, hdrlen+int(dtlen)+int(d.DataLength))
+		n, e = io.ReadFull(r.file, buf)
+		if e != nil {
+			return nil, e
+		}
+		if n != hdrlen+int(dtlen)+int(d.DataLength) {
+			return nil, errors.New("unable to read data")
+		}
 	}
-	if n != int(dtlen+int16(d.DataLength)) {
-		return nil, errors.New("unable to read data")
-	}
+	dtlen += int16(hdrlen)
 
-	d.Type = string(buf[:dtlen])
+	d.Type = string(buf[hdrlen:dtlen])
 
-	d.Data = buf[dtlen:]
+	n = int(dtlen) + int(d.DataLength)
+
+	d.Data = buf[dtlen:n]
 
 	return &d, nil
 }

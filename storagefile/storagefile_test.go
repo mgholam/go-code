@@ -60,6 +60,7 @@ func Test_speedstringonly(t *testing.T) {
 	for i := 1; i < count; i++ {
 		_, _, e := sf.Get(int64(i))
 		if e != nil {
+			fmt.Println(e)
 			fmt.Println("error reading ", i)
 		}
 	}
