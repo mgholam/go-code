@@ -7,7 +7,6 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"os"
 	"sync"
 	"sync/atomic"
@@ -40,26 +39,25 @@ func (r *reader) close() {
 }
 
 type StorageFile struct {
-	l         sync.Mutex
-	file      *os.File
-	idx       *os.File
-	filename  string
-	lastptr   int64
-	writer    *bufio.Writer
-	idxwriter *bufio.Writer
-	idxrdr    *os.File
-	datrdr    *os.File
-	count     int64
-	readers   chan *reader
-	dirty     bool
-	// Lower performance but better data integrity
-	FlushOnWrites bool
+	file          *os.File
+	idx           *os.File
+	filename      string
+	lastptr       int64
+	writer        *bufio.Writer
+	idxwriter     *bufio.Writer
+	idxrdr        *os.File
+	datrdr        *os.File
+	count         int64
+	readers       chan *reader
+	dirty         bool
+	FlushOnWrites bool // Lower performance but better data integrity
+	sync.Mutex
 }
 
 // Add terminator sequence to a failed integrity check data file at your own risk for recovery
 // last data in the file will be invalid
 func AddTerminator(filename string) {
-	// TODO : write AddTerminator()
+	// FEATURE : write AddTerminator()
 
 	// f, e := os.OpenFile(filename, os.O_WRONLY, 0644)
 	// if e != nil {
@@ -118,7 +116,7 @@ func Open(filename string) (*StorageFile, error) {
 	fi, _ = sf.idx.Stat()
 	sf.count = fi.Size() / 8
 
-	ioutil.WriteFile(filename+".dirty", []byte("isdirty"), 0644)
+	os.WriteFile(filename+".dirty", []byte("isdirty"), 0644)
 
 	sf.readers = make(chan *reader, MAXREADERS)
 	for i := 0; i < MAXREADERS; i++ {
@@ -175,11 +173,11 @@ func fileExists(fn string) bool {
 
 // Save data to storage file
 func (sf *StorageFile) Save(dtype string, data []byte) int64 {
-	sf.l.Lock()
+	sf.Lock()
 
 	i := sf.internalSave(dtype, data, false)
 
-	sf.l.Unlock()
+	sf.Unlock()
 	return i
 }
 

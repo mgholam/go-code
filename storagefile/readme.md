@@ -15,14 +15,22 @@ storagefile.MAXREADERS=10 // set 10 readers (default = 5)
 sf, _ := storagefile.Open("docs.dat")
 defer  sf.Close()
 
-// doc save middleware
-app.Use(func(c *fiber.Ctx) error {
-	if c.Method() == "POST" || c.Method() == "PUT" || c.Method() == "DELETE" {
-		// save to docs database
-		sf.Save(c.Method()+"|"+c.Path(), c.Body())
+// doc save chi middleware
+app.Use(func(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		// skip non json
+		skip := true
+		if r.Header.Get("Content-Type") == "application/json" {
+			skip = false
+		}
+		if skip == false && (r.Method == "POST" || r.Method == "PUT" || r.Method == "DELETE") {
+			b, _ := io.ReadAll(r.Body)
+			sf.Save(r.Method+"|"+r.URL.Path, b)
+			r.Body.Close()
+			r.Body = io.NopCloser(bytes.NewReader(b))
+		}
+		next.ServeHTTP(w, r)
 	}
-	log.Println(c)
-	return c.Next()
 })
 
 // get the 10th record in the StroageFile
