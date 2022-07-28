@@ -80,7 +80,7 @@ func Test_iterate(t *testing.T) {
 	}()
 
 	b := Book{
-		ID:     1,
+		// ID:     1,
 		Title:  "dune",
 		Author: "frank herbert",
 		Rating: 5,
